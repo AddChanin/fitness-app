@@ -26,9 +26,39 @@ Most fitness apps overcomplicate things, which I don’t need most of them. Week
 - ExerciseDB API (via RapidAPI) for exercise data
 - Expo Checkbox for set tracking
 
-**Credit**
+<br>
+<br>
 
-Exercise Database API [ExerciseDB API](https://rapidapi.com/ascendapi/api/exercisedb-api1/playground/apiendpoint_6abc0d7f-e12c-49ad-b9bc-af028ee48fb3).
+**Follow these steps to download and try the app on your device:**
+
+1. Clone the repository or download normally
+```
+git clone https://github.com/AddChanin/fitness-app.git
+cd fitness-app
+```
+
+2. Install dependencies
+
+   Make sure you have Node.js and Expo CLI installed, then run:
+```
+npm install
+```
+3. cd to your project path, then start the app by 
+```
+npx expo start
+```
+
+<br>
+<br>
+
+**_Note_**
+
+In case you need an API key. I use the ExerciseDB API. You can get it from here [ExerciseDB API](https://rapidapi.com/ascendapi/api/exercisedb-api1/playground/apiendpoint_6abc0d7f-e12c-49ad-b9bc-af028ee48fb3).
+
+Anything related to Expo issue, you can read here [Expo Docs](https://docs.expo.dev/)
+
+<br>
+<br>
 
 
 📱 **Example Screenshots**
