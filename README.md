@@ -57,6 +57,7 @@ In case you need an API key. I use the ExerciseDB API. You can get it from here 
 
 Anything related to Expo issue, you can read here [Expo Docs](https://docs.expo.dev/)
 
+After you get API Keys, you can check at **./fitness-app/app/component/apiPage.tsx**
 <br>
 <br>
 
