@@ -68,5 +68,14 @@ After you get API Keys, you can check at **./fitness-app/app/component/apiPage.t
 <img width="20%" height="20%" hspace="50" alt="2" src="https://github.com/user-attachments/assets/0b1fd933-3e57-498a-8d81-be2390fa9b6e" />
 <img width="20%" height="20%" hspace="50" alt="3" src="https://github.com/user-attachments/assets/fb743a4c-1b76-4cda-b04c-7edc6783f8ba" />
 
+<br>
+<br>
+<br>
+<br>
 
+**__⚠️ Disclaimer__**
 
+This project is a personal learning project created for educational and non-commercial purposes.
+The ExerciseDB API is used only for demonstration within this app.
+If you plan to use this project or its API integration for your own purposes, please review the [ExerciseDB API terms](https://rapidapi.com/ascendapi/api/exercisedb-api1)
+ and obtain your own API key.
