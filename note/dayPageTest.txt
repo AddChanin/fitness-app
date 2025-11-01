@@ -1,0 +1,429 @@
+// For testing only
+// Have 2 set of code
+
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+type DayData = {
+  day: string;
+  exercises: string[];
+};
+
+const STORAGE_KEY = '@weekly_exercises';
+
+const Day = () => {
+  const [date, setDate] = useState<DayData[]>([
+    { day: "Day 1", exercises: [] },
+    { day: "Day 2", exercises: [] },
+    { day: "Day 3", exercises: [] },
+    { day: "Day 4", exercises: [] },
+    { day: "Day 5", exercises: [] },
+    { day: "Day 6", exercises: [] },
+    { day: "Day 7", exercises: [] },
+  ]);
+
+  const [newExercise, setNewExercise] = useState<string>("");  // ✅ clearly string
+  const [selectedDay, setSelectedDay] = useState<number | null>(null); // ✅ can be number or null
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    saveData();
+  }, [date]);
+
+  const saveData = async () => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(date));
+    } catch (e) {
+      console.log('Error saving data:', e);
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      if (saved !== null) {
+        setDate(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.log('Error loading data:', e);
+    }
+  };
+
+  const handleAddExercise = (dayIndex: number) => {
+    if (!newExercise.trim()) return;
+    const updatedDays = [...date];
+    updatedDays[dayIndex].exercises.push(newExercise.trim());
+    setDate(updatedDays);
+    setNewExercise("");
+    setSelectedDay(null);
+  };
+
+  const handleDeleteExercise = (dayIndex: number, exerciseIndex: number) => {
+    const updatedDays = [...date];
+    updatedDays[dayIndex].exercises.splice(exerciseIndex, 1);
+    setDate(updatedDays);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      {date.map((dateItem, dateIdx) => (
+        <View key={dateIdx} style={styles.dayBlock}>
+          <Text style={styles.dayTitle}>{dateItem.day}</Text>
+
+          {dateItem.exercises.map((ex, i) => (
+            <View key={i} style={styles.exerciseRow}>
+              <Text style={styles.exerciseItem}>• {ex}</Text>
+              <TouchableOpacity onPress={() => handleDeleteExercise(dateIdx, i)}>
+                <Text style={styles.deleteText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {selectedDay === dateIdx && (
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                value={newExercise}
+                placeholder="Enter exercise..."
+                onChangeText={setNewExercise}
+              />
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => handleAddExercise(dateIdx)}
+              >
+                <Text style={styles.addText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TouchableOpacity onPress={() => setSelectedDay(dateIdx)}>
+            <Text style={styles.addExerciseText}>+ Add Exercise</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 30,
+    paddingHorizontal: 100,
+  },
+  dayBlock: {
+    marginBottom: 20,
+    padding: 10,
+    paddingHorizontal: 50,
+    borderRadius: 10,
+    backgroundColor: '#F3F3F3',
+
+  },
+  dayTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+
+  },
+  exerciseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  exerciseItem: {
+    fontSize: 16,
+  },
+  deleteText: {
+    color: 'red',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  addExerciseText: {
+    color: '#006CD0',
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  addButton: {
+    marginLeft: 8,
+    backgroundColor: '#006CD0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});
+
+export default Day;
+
+
+
+// Dat2
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing, TouchableWithoutFeedback, ScrollView, RefreshControl } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import Collapsible from "react-native-collapsible";
+import { Link, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FlatList } from 'react-native-reanimated/lib/typescript/Animated';
+import Checkbox from "expo-checkbox";
+import AntDesign from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AddWorkoutSet from './AddWorkoutSet';
+
+
+const Day2 = () => {
+
+  const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
+  // ✅ Toggle checkbox per item
+  const toggleCheckbox = (key: string) => {
+    setCheckedItems(prev => ({
+      ...prev,
+      [key]: !prev[key] // toggle this specific checkbox
+    }));
+  };
+
+  const [savedData, setSavedData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Function to fetch data
+  const fetchDataFromAnotherScreen = async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      
+      // Filter out workout set keys to avoid duplicates
+      const exerciseKeys = keys.filter(key => !key.startsWith('@workout_sets_'));
+      
+      if (exerciseKeys.length === 0) {
+        setSavedData([]);
+        return;
+      }
+      
+      const result = await AsyncStorage.multiGet(exerciseKeys);
+      
+      // Safely parse each item with error handling
+      const parsed = result
+        .map(([key, value]) => {
+          try {
+            // Skip if value is null or undefined
+            if (!value) {
+              console.warn(`Skipping null value for key: ${key}`);
+              return null;
+            }
+            
+            // Try to parse JSON
+            const parsedData = JSON.parse(value);
+            
+            // Validate that it has expected structure
+            if (!parsedData || typeof parsedData !== 'object') {
+              console.warn(`Invalid data structure for key: ${key}`);
+              return null;
+            }
+            
+            return {
+              key,
+              ...parsedData
+            };
+          } catch (parseError) {
+            console.error(`Error parsing data for key ${key}:`, parseError);
+            // Remove corrupted data
+            AsyncStorage.removeItem(key).catch(e => 
+              console.error('Failed to remove corrupted key:', e)
+            );
+            return null;
+          }
+        })
+        .filter(item => item !== null); // Remove failed parses
+      
+      setSavedData(parsed);
+    } catch (e) {
+      console.error('Error reading data:', e);
+      setSavedData([]);
+    }
+  };
+
+  // Load data when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchDataFromAnotherScreen();
+    }, [])
+  );
+
+  // Pull to refresh handler
+  const onRefresh = React.useCallback(async () => {
+    // setRefreshing(true);
+    // await fetchDataFromAnotherScreen();
+    // setRefreshing(false);
+      console.log('🔄 Refresh started!'); // Add this line
+  setRefreshing(true);
+  await fetchDataFromAnotherScreen();
+  setRefreshing(false);
+  console.log('✅ Refresh completed!'); // Add this line
+  }, []);
+
+  
+  const deleteData = async (key: string) => {
+    try {
+      await AsyncStorage.removeItem(key);
+      await AsyncStorage.removeItem(`@workout_sets_${key}`); // Delete associated workout sets
+      console.log(`Deleted data with key: ${key}`);
+      setSavedData(prevData => prevData.filter(item => item.key !== key));
+
+    } catch (e) {
+      console.error('Error deleting data:', e);
+    }
+  };
+
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const toggleExpanded = (key: string) => {
+    //Toggling the state of single Collapsible
+    setExpandedKey(prevKey => (prevKey === key ? null : key));
+  };
+
+  return (
+    <ScrollView 
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#006CD0" // iOS spinner color
+          colors={['#006CD0']} // Android spinner color
+          title="Pull to refresh" // iOS text
+          titleColor="#666" // iOS text color
+        />
+      }
+    >
+
+
+      {savedData.map((item) => (
+
+        <TouchableOpacity
+          key={item.key}
+          onPress={() => {}}
+          delayLongPress={400} // optional: makes it feel natural
+        >
+          <View style={styles.exerciseBox}>
+
+            <View style={styles.titleBox}>
+              <Checkbox
+                value={checkedItems[item.key] || false}
+                onValueChange={() => toggleCheckbox(item.key)}
+                color={checkedItems[item.key] ? '#00D065' : undefined}
+                style={{}}
+              ></Checkbox>
+
+              <Text style={{color: '', fontWeight: 'bold'}}>{item.name}</Text>
+
+              <TouchableOpacity
+                onPress={() => deleteData(item.key)}
+              >
+                <MaterialCommunityIcons
+                  name="delete"
+                  color="#ED2939"
+                  size={24}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.expandedBox}>
+              {/* <Text>Set counter</Text> */}
+            </View>
+          </View>
+
+        </TouchableOpacity>
+
+      )
+      )}
+
+      {/* Add Excercise Button */}
+      <Link href="/component/apiPage" asChild>
+        <TouchableOpacity
+          style={styles.addExercoseButton}>
+          <Text style={{color: '#006CD0', fontWeight: 'bold'}}>+ Add Excercise</Text>
+        </TouchableOpacity>
+      </Link>
+
+
+    </ScrollView>
+  )
+}
+const { width, height } = Dimensions.get("window");
+
+const styles = StyleSheet.create({
+  container: {
+    // flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#E5E4E2"
+  },
+  checkBox: {
+    // marginLeft: 10, 
+  },
+  addExercoseButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    width: width * 0.90,
+    height: height * 0.05,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0.5,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  exerciseBox: {
+    width: width * 0.9,
+    height: height * 0.32,
+    backgroundColor: '#FFFFFF',
+    marginTop: 10,
+    borderRadius: 10,
+  },
+
+  titleBox: {
+    // backgroundColor: '#E9FFDB', // ignore borderradius if it is still background color
+    paddingHorizontal: 15,
+    paddingVertical: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  expandedBox: {
+    alignItems: 'center',
+    // alignContent: 'flex-end',
+    // flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 25,
+    // paddingHorizontal: 15,
+
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  contentText: {
+    padding: 15,
+  },
+});
+export default Day2

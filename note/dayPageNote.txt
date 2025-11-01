@@ -1,0 +1,246 @@
+// Divided into 7 days and each day have its own async-storage seperately and differently
+// Implement them in the future
+
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing, TouchableWithoutFeedback, ScrollView, RefreshControl } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import Collapsible from "react-native-collapsible";
+import { Link, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FlatList } from 'react-native-reanimated/lib/typescript/Animated';
+import Checkbox from "expo-checkbox";
+import AntDesign from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AddWorkoutSet from './AddWorkoutSet';
+
+
+const DayPage = () => {
+
+  // const [date, setDate] = useState([
+  //   { day: "Day 1" },
+  //   { day: "Day 2" },
+  //   { day: "Day 3" },
+  //   { day: "Day 4" },
+  //   { day: "Day 5" },
+  //   { day: "Day 6" },
+  //   { day: "Day 7" },
+  // ]);
+
+  const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
+  // ✅ Toggle checkbox per item
+  const toggleCheckbox = (key: string) => {
+    setCheckedItems(prev => ({
+      ...prev,
+      [key]: !prev[key] // toggle this specific checkbox
+    }));
+  };
+
+  const [savedData, setSavedData] = useState<any[]>([]);
+
+  // Function to fetch data
+  const fetchDataFromAnotherScreen = async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+
+      // Filter out workout set keys to avoid duplicates
+      const exerciseKeys = keys.filter(key => !key.startsWith('@workout_sets_'));
+
+      if (exerciseKeys.length === 0) {
+        setSavedData([]);
+        return;
+      }
+
+      const result = await AsyncStorage.multiGet(exerciseKeys);
+
+      // Safely parse each item with error handling
+      const parsed = result
+        .map(([key, value]) => {
+          try {
+            // Skip if value is null or undefined
+            if (!value) {
+              console.warn(`Skipping null value for key: ${key}`);
+              return null;
+            }
+
+            // Try to parse JSON
+            const parsedData = JSON.parse(value);
+
+            // Validate that it has expected structure
+            if (!parsedData || typeof parsedData !== 'object') {
+              console.warn(`Invalid data structure for key: ${key}`);
+              return null;
+            }
+
+            return {
+              key,
+              ...parsedData
+            };
+          } catch (parseError) {
+            console.error(`Error parsing data for key ${key}:`, parseError);
+            // Remove corrupted data
+            AsyncStorage.removeItem(key).catch(e =>
+              console.error('Failed to remove corrupted key:', e)
+            );
+            return null;
+          }
+        })
+        .filter(item => item !== null); // Remove failed parses
+
+      setSavedData(parsed);
+    } catch (e) {
+      console.error('Error reading data:', e);
+      setSavedData([]);
+    }
+  };
+
+  // Load data when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchDataFromAnotherScreen();
+    }, [])
+  );
+
+
+  const deleteData = async (key: string) => {
+    try {
+      await AsyncStorage.removeItem(key);
+      await AsyncStorage.removeItem(`@workout_sets_${key}`); // Delete associated workout sets
+      console.log(`Deleted data with key: ${key}`);
+      setSavedData(prevData => prevData.filter(item => item.key !== key));
+
+    } catch (e) {
+      console.error('Error deleting data:', e);
+    }
+  };
+
+  return (
+
+    <ScrollView
+      contentContainerStyle={styles.container}
+    >
+
+      {/* {date.map((dateItem, dateIdx) => ( */}
+        {/* <View key={dateIdx}> */}
+
+          {/* Date Header */}
+          {/* <Text style={styles.dayText}> {dateItem.day} </Text> */}
+
+          {savedData.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              onPress={() => { }}
+              delayLongPress={400} // optional: makes it feel natural
+            >
+              <View style={styles.exerciseBox}>
+
+                <View style={styles.titleBox}>
+                  <Checkbox
+                    value={checkedItems[item.key] || false}
+                    onValueChange={() => toggleCheckbox(item.key)}
+                    color={checkedItems[item.key] ? '#00D065' : undefined}
+                    style={{}}
+                  ></Checkbox>
+
+                  <Text style={{ color: '', fontWeight: 'bold' }}>{item.name}</Text>
+
+                  <TouchableOpacity
+                    onPress={() => deleteData(item.key)}
+                  >
+                    <MaterialCommunityIcons
+                      name="delete"
+                      color="#ED2939"
+                      size={24}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.expandedBox}>
+                  <AddWorkoutSet />
+                </View>
+              </View>
+
+            </TouchableOpacity>
+
+          )
+          )}
+
+          {/* Add Excercise Button */}
+          <Link href="/component/apiPage" asChild>
+            <TouchableOpacity
+              style={styles.addExercoseButton}>
+              <Text style={{ color: '#006CD0', fontWeight: 'bold' }}>+ Add Excercise</Text>
+            </TouchableOpacity>
+          </Link>
+
+        {/* </View> */}
+      {/* ))} */}
+    </ScrollView>
+  )
+}
+const { width, height } = Dimensions.get("window");
+
+const styles = StyleSheet.create({
+  container: {
+    // flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#E5E4E2"
+  },
+  checkBox: {
+    // marginLeft: 10, 
+  },
+  addExercoseButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    width: width * 0.90,
+    height: height * 0.05,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0.5,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  exerciseBox: {
+    width: width * 0.9,
+    height: height * 0.11,
+    backgroundColor: '#FFFFFF',
+    marginTop: 10,
+    borderRadius: 10,
+  },
+
+  titleBox: {
+    // backgroundColor: '#E9FFDB', // ignore borderradius if it is still background color
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  expandedBox: {
+    alignItems: 'center',
+    // alignContent: 'flex-end',
+    // flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 25,
+    // paddingHorizontal: 15,
+
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  contentText: {
+    padding: 15,
+  },
+  dayText: {
+    marginTop: 10,
+    fontWeight: 'bold',
+    fontSize: 36,
+  },
+});
+export default DayPage

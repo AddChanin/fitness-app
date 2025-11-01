@@ -6,7 +6,6 @@ import DayPage from "./component/DayPage";
 
 export default function Index() {
 
-
   return (
     <SafeAreaView
       style={styles.container}
