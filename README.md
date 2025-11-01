@@ -7,8 +7,8 @@ This app helps you plan and track your weekly workouts — without any complicat
 
 🧠 **Why I Built This App?**
 
-I usually use the built-in note-taking app on my phone to organize my workout routine. What if I made an app that can do the same thing and also make it beginner-friendly? 
-Most fitness apps overcomplicate things, which I don’t need most of them. Weekly Workout Tracker was made to keep things as easy to use as possible while still being functional for daily training.
+I usually use the built-in note-taking app on my phone to organize my workout routine. I want to make an app that be able to organize my workout and also make it beginner-friendly. 
+Weekly Workout Tracker was made to keep things as easy to use and help you focus on the workout over using a complicated app.
 
 ✨ **Features**
 
